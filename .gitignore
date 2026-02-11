@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+data/
+logs/
+test_*.json
+nul
+.claude/
