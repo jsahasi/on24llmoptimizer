@@ -67,14 +67,22 @@ streamlit run app.py
 python run_benchmark.py
 ```
 
-### Schedule Daily Benchmarks (Windows)
+### Generate PDF Report
+
+```bash
+python reports/pdf_report.py
+```
+
+Or use the **Reports** page in the dashboard to generate and download.
+
+### Schedule Weekly Benchmarks (Windows)
 
 Run as Administrator:
 ```batch
 scheduler\install_task.bat
 ```
 
-This creates a Windows Task Scheduler job that runs the benchmark daily at 6:00 AM.
+This creates a Windows Task Scheduler job that runs the benchmark weekly (Mondays at 6:00 AM).
 
 ## Dashboard Pages
 
@@ -85,6 +93,7 @@ This creates a Windows Task Scheduler job that runs the benchmark daily at 6:00 
 5. **Recommendations** - AI-generated tactical suggestions to improve GEO performance
 6. **Run Benchmark** - Manual trigger with progress bar and run history
 7. **Glossary** - Explanation of what the app does and definitions of all terms
+8. **Reports** - Generate and download professional PDF reports with charts and tables
 
 ## Query Categories (32 queries)
 
@@ -96,7 +105,7 @@ This creates a Windows Task Scheduler job that runs the benchmark daily at 6:00 
 
 ## Estimated Cost
 
-~$3-7 per daily benchmark run across all 3 LLM engines.
+~$3-7 per benchmark run across all 3 LLM engines.
 
 ## Architecture
 
@@ -107,7 +116,7 @@ Queries (32) --> Grok (web search) + ChatGPT (web search) + Claude (parametric)
                               |
                     SQLite (6 tables, WAL mode)
                               |
-                    Streamlit Dashboard (7 pages)
+                    Streamlit Dashboard (8 pages)
                               |
                     Claude Recommendations Engine
 ```

@@ -19,7 +19,8 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - `db/` - SQLite schema (6 tables) and database manager
 - `benchmark/` - Grok client, OpenAI client, Claude client, orchestrator engine
 - `analysis/` - Response parser, metrics calculator, trends analyzer, recommendation engine
-- `pages/` - Streamlit multi-page dashboard (7 pages)
+- `pages/` - Streamlit multi-page dashboard (8 pages)
+- `reports/` - PDF report generator (reportlab + matplotlib charts)
 - `app.py` - Streamlit entry point
 - `run_benchmark.py` - Standalone script for Windows Task Scheduler
 
@@ -34,14 +35,16 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 ## Commands
 - Dashboard: `streamlit run app.py`
 - Manual benchmark: `python run_benchmark.py`
+- Generate PDF report: `python reports/pdf_report.py`
 - Install deps: `pip install -r requirements.txt`
-- Task Scheduler: Run `scheduler\install_task.bat` as Administrator
+- Task Scheduler (weekly): Run `scheduler\install_task.bat` as Administrator
 
 ## Build Status - COMPLETE
 - [x] Foundation (config, db, requirements)
 - [x] API Clients (Grok + ChatGPT + Claude)
 - [x] Response Parser (Claude-powered)
 - [x] Benchmark Engine + Metrics
-- [x] Streamlit Dashboard (7 pages incl. Glossary)
+- [x] Streamlit Dashboard (8 pages incl. Glossary + Reports)
+- [x] PDF Report Generator (reportlab + matplotlib)
 - [x] Recommendations Engine
-- [x] Scheduler
+- [x] Weekly Scheduler (Mondays 6 AM)
