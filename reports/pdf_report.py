@@ -97,11 +97,12 @@ class GEOReportGenerator:
             fontSize=14, textColor=ON24_BLUE, spaceBefore=12,
             spaceAfter=6, fontName="Helvetica-Bold",
         ))
-        self.styles.add(ParagraphStyle(
-            "BodyText", parent=self.styles["Normal"],
-            fontSize=10, leading=14, spaceAfter=8,
-            alignment=TA_JUSTIFY, textColor=DARK_GRAY,
-        ))
+        # Modify existing BodyText style (built-in)
+        self.styles["BodyText"].fontSize = 10
+        self.styles["BodyText"].leading = 14
+        self.styles["BodyText"].spaceAfter = 8
+        self.styles["BodyText"].alignment = TA_JUSTIFY
+        self.styles["BodyText"].textColor = DARK_GRAY
         self.styles.add(ParagraphStyle(
             "SmallText", parent=self.styles["Normal"],
             fontSize=8, leading=10, textColor=colors.HexColor("#888888"),

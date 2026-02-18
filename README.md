@@ -51,6 +51,10 @@ Create a `.env` file in the project root:
 ANTHROPIC_API_KEY=your-anthropic-key
 XAI_API_KEY=your-xai-key
 OPENAI_API_KEY=your-openai-key
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
 ```
 
 ## Usage
@@ -74,6 +78,14 @@ python reports/pdf_report.py
 ```
 
 Or use the **Reports** page in the dashboard to generate and download.
+
+### Email Report
+
+```bash
+python -m reports.email_report reports/output/ON24_GEO_Report_2026-02-11.pdf recipient@example.com
+```
+
+Requires SMTP settings in `.env`.
 
 ### Schedule Weekly Benchmarks (Windows)
 
@@ -119,4 +131,8 @@ Queries (32) --> Grok (web search) + ChatGPT (web search) + Claude (parametric)
                     Streamlit Dashboard (8 pages)
                               |
                     Claude Recommendations Engine
+                              |
+                    PDF Report (reportlab + matplotlib)
+                              |
+                    Email via SMTP (Gmail)
 ```
