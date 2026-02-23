@@ -1,7 +1,7 @@
 import time
 import requests
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from config.settings import XAI_API_KEY, XAI_RESPONSES_URL, GROK_DELAY_SECONDS
+from config.settings import _get_secret, XAI_RESPONSES_URL, GROK_DELAY_SECONDS
 
 
 GROK_MODEL = "grok-4-0709"
@@ -9,9 +9,10 @@ GROK_MODEL = "grok-4-0709"
 
 class GrokWebSearchClient:
     def __init__(self):
+        api_key = _get_secret("XAI_API_KEY")
         self.headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {XAI_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
         }
         self._last_call = 0
 

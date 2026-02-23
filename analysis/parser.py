@@ -1,6 +1,6 @@
 import json
 import anthropic
-from config.settings import ANTHROPIC_API_KEY, CLAUDE_MODEL
+from config.settings import _get_secret, CLAUDE_MODEL
 from config.brands import BRAND_DEFINITIONS
 
 
@@ -9,7 +9,7 @@ VALID_BRANDS = {"on24", "goldcast", "zoom", "other"}
 
 class ResponseParser:
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.client = anthropic.Anthropic(api_key=_get_secret("ANTHROPIC_API_KEY"))
 
     def parse_response(self, raw_response_text: str) -> dict:
         system_prompt = """Extract brand mentions from an LLM response about webinar platforms.

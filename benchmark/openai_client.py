@@ -1,14 +1,17 @@
 import time
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from config.settings import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_DELAY_SECONDS
+from config.settings import _get_secret, OPENAI_MODEL, OPENAI_DELAY_SECONDS
 
 
 class OpenAISearchClient:
     """Client for OpenAI ChatGPT with web search via the responses API."""
 
     def __init__(self):
-        self.client = OpenAI(api_key=OPENAI_API_KEY)
+        api_key = _get_secret("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found in environment or Streamlit secrets")
+        self.client = OpenAI(api_key=api_key)
         self.model = OPENAI_MODEL
         self._last_call = 0
 

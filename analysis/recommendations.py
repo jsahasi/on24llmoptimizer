@@ -2,13 +2,13 @@ import json
 import anthropic
 from itertools import groupby
 from operator import itemgetter
-from config.settings import ANTHROPIC_API_KEY, CLAUDE_MODEL_RECOMMENDATIONS
+from config.settings import _get_secret, CLAUDE_MODEL_RECOMMENDATIONS
 
 
 class RecommendationEngine:
     def __init__(self, db):
         self.db = db
-        self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.client = anthropic.Anthropic(api_key=_get_secret("ANTHROPIC_API_KEY"))
 
     def generate_recommendations(self, run_id=None) -> dict:
         data_summary = self._build_data_summary(run_id)

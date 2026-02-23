@@ -1,12 +1,12 @@
 import time
 import anthropic
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from config.settings import ANTHROPIC_API_KEY, CLAUDE_MODEL, CLAUDE_DELAY_SECONDS
+from config.settings import _get_secret, CLAUDE_MODEL, CLAUDE_DELAY_SECONDS
 
 
 class ClaudeParametricClient:
     def __init__(self):
-        self.client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        self.client = anthropic.Anthropic(api_key=_get_secret("ANTHROPIC_API_KEY"))
         self.model = CLAUDE_MODEL
         self._last_call = 0
 
