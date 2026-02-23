@@ -32,7 +32,12 @@ st.markdown(
 )
 
 if st.button("Start Benchmark Run", type="primary"):
-    engine = BenchmarkEngine(trigger_type="manual")
+    try:
+        engine = BenchmarkEngine(trigger_type="manual")
+    except (ValueError, Exception) as e:
+        st.error(f"Cannot start benchmark — missing API keys: {e}")
+        st.info("Go to **Manage app** > **Settings** > **Secrets** and add your API keys in TOML format.")
+        st.stop()
     progress_bar = st.progress(0)
     status_text = st.empty()
 

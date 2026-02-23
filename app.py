@@ -50,3 +50,13 @@ if latest:
     st.info(f"Latest benchmark run: #{latest}")
 else:
     st.warning("No benchmark data yet. Go to **Run Benchmark** to start your first run.")
+
+# API key status check
+with st.expander("API Key Status"):
+    from config.settings import _get_secret
+    for key in ["ANTHROPIC_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY"]:
+        val = _get_secret(key)
+        if val:
+            st.success(f"{key}: Configured ({val[:8]}...)")
+        else:
+            st.error(f"{key}: NOT FOUND")
