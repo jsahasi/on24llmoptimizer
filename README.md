@@ -31,6 +31,10 @@ Track and improve ON24's visibility in AI-powered search results (LLMs like Chat
 - **ChatGPT Web Search** (OpenAI) - Real-time results via OpenAI Responses API with web search preview
 - **Claude Parametric** (Anthropic) - Measures what Claude knows from training data (no web search)
 
+## Live Demo
+
+**https://on24llmoptimizer.streamlit.app** (password-protected)
+
 ## Setup
 
 ### Prerequisites
@@ -55,6 +59,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
+APP_PASSWORD=your-dashboard-password
 ```
 
 ## Usage
@@ -95,6 +100,10 @@ scheduler\install_task.bat
 ```
 
 This creates a Windows Task Scheduler job that runs the benchmark weekly (Mondays at 6:00 AM).
+
+## Authentication
+
+All pages are password-protected. Set `APP_PASSWORD` in `.env` or Streamlit Cloud secrets.
 
 ## Dashboard Pages
 

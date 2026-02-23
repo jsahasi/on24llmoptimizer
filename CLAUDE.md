@@ -15,14 +15,16 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - Parser uses Claude with simplified JSON prompt
 
 ## Project Structure
-- `config/` - Settings, brand definitions, 32 query templates across 5 categories
+- `config/` - Settings (lazy secret loading via `_get_secret`), brand definitions, 32 query templates
 - `db/` - SQLite schema (6 tables) and database manager
 - `benchmark/` - Grok client, OpenAI client, Claude client, orchestrator engine
 - `analysis/` - Response parser, metrics calculator, trends analyzer, recommendation engine
-- `pages/` - Streamlit multi-page dashboard (8 pages)
+- `pages/` - Streamlit multi-page dashboard (8 pages, all password-protected)
 - `reports/` - PDF report generator (reportlab + matplotlib) + email sender (SMTP)
+- `auth.py` - Password gate for all pages (password in `APP_PASSWORD` secret)
 - `app.py` - Streamlit entry point
 - `run_benchmark.py` - Standalone script for Windows Task Scheduler
+- `.streamlit/config.toml` - Streamlit Cloud config (headless, ON24 theme)
 
 ## Key Design Decisions
 - ON24 domain filtering: www.on24.com (target) vs event.on24.com (excluded from target metric)
@@ -40,8 +42,15 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - Install deps: `pip install -r requirements.txt`
 - Task Scheduler (weekly): Run `scheduler\install_task.bat` as Administrator
 
+## Deployment
+- **Streamlit Cloud**: https://on24llmoptimizer.streamlit.app (public, password-protected)
+- **GitHub**: https://github.com/jsahasi/on24llmoptimizer (public repo)
+- Secrets configured via Streamlit Cloud Settings > Secrets (TOML format)
+- API keys resolved lazily via `_get_secret()` — works with both .env and st.secrets
+
 ## Known Issues
 - reportlab's default stylesheet includes `BodyText` — must modify it in-place, not re-add
+- Streamlit Cloud TOML secrets: API keys must be on a single line (no line breaks in values)
 
 ## Build Status - COMPLETE
 - [x] Foundation (config, db, requirements)
@@ -53,3 +62,5 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - [x] Email Report via SMTP (Gmail)
 - [x] Recommendations Engine
 - [x] Weekly Scheduler (Mondays 6 AM)
+- [x] Password Protection (all pages)
+- [x] Streamlit Cloud Deployment
