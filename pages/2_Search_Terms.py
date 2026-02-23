@@ -1,8 +1,12 @@
 import streamlit as st
-import pandas as pd
-from db.database import DatabaseManager
 
 st.set_page_config(page_title="Search Terms", layout="wide")
+
+from auth import check_password
+if not check_password():
+    st.stop()
+import pandas as pd
+from db.database import DatabaseManager
 st.header("Search Term Analysis")
 
 db = DatabaseManager()

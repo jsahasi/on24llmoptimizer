@@ -7,6 +7,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+from auth import check_password
+if not check_password():
+    st.stop()
+
 st.title("ON24 GEO Benchmarking Dashboard")
 st.markdown(
     "Track ON24's footprint in LLM search results vs **Goldcast** and **Zoom**. "

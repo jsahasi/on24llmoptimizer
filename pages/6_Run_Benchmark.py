@@ -1,8 +1,12 @@
 import streamlit as st
-from db.database import DatabaseManager
-from benchmark.engine import BenchmarkEngine
 
 st.set_page_config(page_title="Run Benchmark", layout="wide")
+
+from auth import check_password
+if not check_password():
+    st.stop()
+from db.database import DatabaseManager
+from benchmark.engine import BenchmarkEngine
 st.header("Run Benchmark")
 
 db = DatabaseManager()

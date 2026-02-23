@@ -1,8 +1,12 @@
 import streamlit as st
-from db.database import DatabaseManager
-from analysis.recommendations import RecommendationEngine
 
 st.set_page_config(page_title="Recommendations", layout="wide")
+
+from auth import check_password
+if not check_password():
+    st.stop()
+from db.database import DatabaseManager
+from analysis.recommendations import RecommendationEngine
 st.header("AI-Powered GEO Recommendations")
 
 db = DatabaseManager()

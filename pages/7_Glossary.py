@@ -1,6 +1,10 @@
 import streamlit as st
 
 st.set_page_config(page_title="About & Glossary", layout="wide")
+
+from auth import check_password
+if not check_password():
+    st.stop()
 st.header("About This Application")
 
 st.markdown("""

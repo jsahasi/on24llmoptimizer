@@ -1,4 +1,7 @@
 import streamlit as st
+from auth import check_password
+if not check_password():
+    st.stop()
 import pandas as pd
 import plotly.express as px
 from db.database import DatabaseManager

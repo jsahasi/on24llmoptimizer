@@ -6,3 +6,4 @@ logs/
 test_*.json
 nul
 .claude/
+secrets_template.toml

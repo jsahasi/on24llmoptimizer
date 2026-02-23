@@ -1,9 +1,13 @@
 import os
 import streamlit as st
-from db.database import DatabaseManager
-from reports.pdf_report import GEOReportGenerator
 
 st.set_page_config(page_title="Reports", layout="wide")
+
+from auth import check_password
+if not check_password():
+    st.stop()
+from db.database import DatabaseManager
+from reports.pdf_report import GEOReportGenerator
 st.header("Generate PDF Report")
 
 db = DatabaseManager()
