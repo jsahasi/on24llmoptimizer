@@ -53,10 +53,24 @@ else:
 
 # API key status check
 with st.expander("API Key Status"):
+    import os
     from config.settings import _get_secret
+
+    # Check st.secrets directly
+    try:
+        secret_keys = list(st.secrets.keys()) if hasattr(st.secrets, 'keys') else []
+        st.write(f"Streamlit secrets keys found: {secret_keys}")
+    except Exception as e:
+        st.warning(f"st.secrets not available: {e}")
+
+    # Check env vars
+    env_keys = [k for k in ["ANTHROPIC_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY"] if os.getenv(k)]
+    st.write(f"Environment variables found: {env_keys if env_keys else 'None'}")
+
+    # Check each key
     for key in ["ANTHROPIC_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY"]:
         val = _get_secret(key)
         if val:
             st.success(f"{key}: Configured ({val[:8]}...)")
         else:
-            st.error(f"{key}: NOT FOUND")
+            st.error(f"{key}: NOT FOUND — check Manage app > Settings > Secrets")
