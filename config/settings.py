@@ -6,10 +6,23 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).parent.parent
 load_dotenv(PROJECT_ROOT / ".env")
 
+
+def _get_secret(key):
+    """Read from env vars first, fall back to Streamlit secrets (for Cloud deployment)."""
+    val = os.getenv(key)
+    if val:
+        return val
+    try:
+        import streamlit as st
+        return st.secrets.get(key)
+    except Exception:
+        return None
+
+
 # API Keys
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-XAI_API_KEY = os.getenv("XAI_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ANTHROPIC_API_KEY = _get_secret("ANTHROPIC_API_KEY")
+XAI_API_KEY = _get_secret("XAI_API_KEY")
+OPENAI_API_KEY = _get_secret("OPENAI_API_KEY")
 
 # xAI Grok Configuration
 XAI_BASE_URL = "https://api.x.ai/v1"
