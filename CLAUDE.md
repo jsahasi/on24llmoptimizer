@@ -17,7 +17,7 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 ## Project Structure
 - `config/` - Settings (lazy secret loading via `_get_secret`), brand definitions, 32 query templates
 - `db/` - SQLite schema (6 tables) and database manager
-- `benchmark/` - Grok client, OpenAI client, Claude client, orchestrator engine
+- `benchmark/` - Grok client, OpenAI client, Claude client, parallel orchestrator engine (ThreadPoolExecutor)
 - `analysis/` - Response parser, metrics calculator, trends analyzer, recommendation engine
 - `pages/` - Streamlit multi-page dashboard (8 pages, all password-protected)
 - `reports/` - PDF report generator (reportlab + matplotlib) + email sender (SMTP)
@@ -30,9 +30,12 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - ON24 domain filtering: www.on24.com (target) vs event.on24.com (excluded from target metric)
 - Zoom filtering: Only tracks Zoom Webinars/Events context, excludes Zoom Meetings
 - Three LLM engines: Grok (web search) + ChatGPT (web search) + Claude (parametric)
+- Parallel execution: 9 workers (3 queries x 3 engines) with thread-safe per-engine rate limiting
+- Resumable runs: interrupted benchmarks can be continued from where they stopped
 - Parser normalizes Claude's varying JSON output formats
 - Pre-aggregated daily_metrics table for fast dashboard queries
 - Winner determined by: primary recommendation > first mention position > sentiment score
+- Only retry transient API errors (rate limit, connection, server); auth errors fail immediately
 
 ## Commands
 - Dashboard: `streamlit run app.py`
@@ -51,6 +54,8 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 ## Known Issues
 - reportlab's default stylesheet includes `BodyText` — must modify it in-place, not re-add
 - Streamlit Cloud TOML secrets: API keys must be on a single line (no line breaks in values)
+- OPENAI_API_KEY is 164 chars — verify length in API Key Status expander if auth errors occur
+- Streamlit Cloud may timeout on long runs — use Resume button to continue interrupted benchmarks
 
 ## Build Status - COMPLETE
 - [x] Foundation (config, db, requirements)
@@ -64,3 +69,5 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - [x] Weekly Scheduler (Mondays 6 AM)
 - [x] Password Protection (all pages)
 - [x] Streamlit Cloud Deployment
+- [x] Parallel Execution (9 workers, ~5-8 min)
+- [x] Resumable Runs (interrupted benchmarks continue from last checkpoint)

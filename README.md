@@ -4,7 +4,7 @@ Track and improve ON24's visibility in AI-powered search results (LLMs like Chat
 
 ## What This Does
 
-1. **Benchmarks ON24's GEO footprint** - Sends 32 industry-relevant search queries to 3 LLM engines and analyzes how ON24 is mentioned vs competitors
+1. **Benchmarks ON24's GEO footprint** - Sends 32 industry-relevant search queries to 3 LLM engines in parallel and analyzes how ON24 is mentioned vs competitors
 2. **Tracks trends daily** - Stores results in SQLite and charts Share of Voice, mention position, sentiment, and win rate over time
 3. **Identifies winners and losers** - Shows which search terms ON24 wins on and where competitors have the advantage
 4. **Provides tactical recommendations** - AI-generated suggestions to improve ON24's visibility in LLM search results and drive more traffic to www.on24.com
@@ -112,7 +112,7 @@ All pages are password-protected. Set `APP_PASSWORD` in `.env` or Streamlit Clou
 3. **Competitors** - Side-by-side comparison of ON24 vs Goldcast vs Zoom with radar chart
 4. **Trends** - Line charts tracking metrics over time
 5. **Recommendations** - AI-generated tactical suggestions to improve GEO performance
-6. **Run Benchmark** - Manual trigger with progress bar and run history
+6. **Run Benchmark** - Manual trigger with progress bar, run history, resume interrupted runs
 7. **Glossary** - Explanation of what the app does and definitions of all terms
 8. **Reports** - Generate and download professional PDF reports with charts and tables
 
@@ -126,12 +126,12 @@ All pages are password-protected. Set `APP_PASSWORD` in `.env` or Streamlit Clou
 
 ## Estimated Cost
 
-~$3-7 per benchmark run across all 3 LLM engines.
+~$3-7 per benchmark run across all 3 LLM engines. Runs complete in ~5-8 minutes with parallel execution.
 
 ## Architecture
 
 ```
-Queries (32) --> Grok (web search) + ChatGPT (web search) + Claude (parametric)
+Queries (32) --[parallel, 9 workers]--> Grok + ChatGPT + Claude
                               |
                     Claude Parser (structured output)
                               |
