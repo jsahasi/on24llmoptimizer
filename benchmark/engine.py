@@ -10,6 +10,8 @@ from config.queries import QUERY_LIBRARY
 
 logger = logging.getLogger(__name__)
 
+ENGINES = ["grok_web_search", "chatgpt_web_search", "claude_parametric"]
+
 
 class BenchmarkEngine:
     def __init__(self, trigger_type="manual"):
@@ -20,81 +22,73 @@ class BenchmarkEngine:
         self.parser = ResponseParser()
         self.metrics = MetricsCalculator(self.db)
         self.trigger_type = trigger_type
+        self._clients = {
+            "grok_web_search": self.grok,
+            "chatgpt_web_search": self.openai,
+            "claude_parametric": self.claude,
+        }
 
-    def run(self, progress_callback=None) -> int:
+    def _get_completed_pairs(self, run_id):
+        """Return set of (query_id, engine) pairs already completed for this run."""
+        rows = self.db.query(
+            "SELECT query_id, llm_engine FROM responses WHERE run_id = ? AND model_name != 'error'",
+            (run_id,),
+        )
+        return {(r["query_id"], r["llm_engine"]) for r in rows}
+
+    def run(self, progress_callback=None, run_id=None) -> int:
+        """Run the benchmark. If run_id is provided, resume that run."""
         self.db.seed_queries(QUERY_LIBRARY)
         active_queries = self.db.get_active_queries()
 
-        run_id = self.db.create_run(
-            run_date=datetime.date.today().isoformat(),
-            total_queries=len(active_queries),
-            trigger_type=self.trigger_type,
-        )
+        if run_id is None:
+            run_id = self.db.create_run(
+                run_date=datetime.date.today().isoformat(),
+                total_queries=len(active_queries),
+                trigger_type=self.trigger_type,
+            )
 
-        total_steps = len(active_queries) * 3  # 3 engines per query
-        current_step = 0
+        completed = self._get_completed_pairs(run_id)
+        total_steps = len(active_queries) * len(ENGINES)
+        current_step = len(completed)
 
         try:
             for query in active_queries:
                 qid = query["id"]
                 qtxt = query["query_text"]
 
-                # --- Grok Web Search ---
-                if progress_callback:
-                    progress_callback(current_step, total_steps, f"Grok: {qtxt[:60]}...")
-                try:
-                    result = self.grok.query(qtxt)
-                    resp_id = self.db.store_response(
-                        run_id=run_id, query_id=qid, llm_engine="grok_web_search",
-                        model_name=result["model"], raw_response=result["raw_response"],
-                        metadata=result["usage"],
-                    )
-                    self._parse_and_store(resp_id, run_id, qid, result, "grok_web_search")
-                except Exception as e:
-                    logger.error(f"Grok error for query {qid}: {e}")
-                    self.db.log_error(run_id, qid, "grok_web_search", str(e))
-                current_step += 1
+                for engine_name in ENGINES:
+                    if (qid, engine_name) in completed:
+                        continue  # Already done, skip
 
-                # --- OpenAI ChatGPT Web Search ---
-                if progress_callback:
-                    progress_callback(current_step, total_steps, f"ChatGPT: {qtxt[:60]}...")
-                try:
-                    result = self.openai.query(qtxt)
-                    resp_id = self.db.store_response(
-                        run_id=run_id, query_id=qid, llm_engine="chatgpt_web_search",
-                        model_name=result["model"], raw_response=result["raw_response"],
-                        metadata=result["usage"],
-                    )
-                    self._parse_and_store(resp_id, run_id, qid, result, "chatgpt_web_search")
-                except Exception as e:
-                    logger.error(f"ChatGPT error for query {qid}: {e}")
-                    self.db.log_error(run_id, qid, "chatgpt_web_search", str(e))
-                current_step += 1
+                    label = {"grok_web_search": "Grok", "chatgpt_web_search": "ChatGPT", "claude_parametric": "Claude"}[engine_name]
+                    if progress_callback:
+                        progress_callback(current_step, total_steps, f"{label}: {qtxt[:55]}...")
 
-                # --- Claude Parametric ---
-                if progress_callback:
-                    progress_callback(current_step, total_steps, f"Claude: {qtxt[:60]}...")
-                try:
-                    result = self.claude.query(qtxt)
-                    resp_id = self.db.store_response(
-                        run_id=run_id, query_id=qid, llm_engine="claude_parametric",
-                        model_name=result["model"], raw_response=result["raw_response"],
-                        metadata=result["usage"],
-                    )
-                    self._parse_and_store(resp_id, run_id, qid, result, "claude_parametric")
-                except Exception as e:
-                    logger.error(f"Claude error for query {qid}: {e}")
-                    self.db.log_error(run_id, qid, "claude_parametric", str(e))
-                current_step += 1
+                    try:
+                        client = self._clients[engine_name]
+                        result = client.query(qtxt)
+                        resp_id = self.db.store_response(
+                            run_id=run_id, query_id=qid, llm_engine=engine_name,
+                            model_name=result["model"], raw_response=result["raw_response"],
+                            metadata=result["usage"],
+                        )
+                        self._parse_and_store(resp_id, run_id, qid, result, engine_name)
+                    except Exception as e:
+                        logger.error(f"{label} error for query {qid}: {e}")
+                        self.db.log_error(run_id, qid, engine_name, str(e))
 
-                self.db.update_run_progress(run_id, completed_queries=current_step // 3)
+                    current_step += 1
+
+                self.db.update_run_progress(run_id, completed_queries=current_step // len(ENGINES))
 
             # Compute aggregated metrics
             self.metrics.compute_daily_metrics(run_id)
             self.db.complete_run(run_id)
 
         except Exception as e:
-            self.db.fail_run(run_id, str(e))
+            # Don't fail the run — leave it as "running" so it can be resumed
+            logger.error(f"Benchmark interrupted: {e}")
             raise
 
         return run_id
