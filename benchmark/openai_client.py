@@ -1,5 +1,5 @@
 import time
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APIConnectionError, InternalServerError
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from config.settings import _get_secret, OPENAI_MODEL, OPENAI_DELAY_SECONDS
 
@@ -24,7 +24,7 @@ class OpenAISearchClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=2, min=4, max=60),
-        retry=retry_if_exception_type((Exception,)),
+        retry=retry_if_exception_type((RateLimitError, APIConnectionError, InternalServerError)),
     )
     def query(self, query_text: str) -> dict:
         self._wait()

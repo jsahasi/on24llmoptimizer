@@ -75,6 +75,6 @@ with st.expander("API Key Status"):
     for key in ["ANTHROPIC_API_KEY", "XAI_API_KEY", "OPENAI_API_KEY"]:
         val = _get_secret(key)
         if val:
-            st.success(f"{key}: Configured ({val[:8]}...)")
+            st.success(f"{key}: Configured ({val[:12]}... | length={len(val)})")
         else:
             st.error(f"{key}: NOT FOUND — check Manage app > Settings > Secrets")
