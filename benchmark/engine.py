@@ -1,5 +1,6 @@
 import datetime
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from db.database import DatabaseManager
 from benchmark.grok_client import GrokWebSearchClient
 from benchmark.claude_client import ClaudeParametricClient
@@ -36,8 +37,56 @@ class BenchmarkEngine:
         )
         return {(r["query_id"], r["llm_engine"]) for r in rows}
 
-    def run(self, progress_callback=None, run_id=None) -> int:
-        """Run the benchmark. If run_id is provided, resume that run."""
+    def _run_single(self, run_id, qid, qtxt, engine_name):
+        """Execute a single (query, engine) pair. Thread-safe."""
+        label = {"grok_web_search": "Grok", "chatgpt_web_search": "ChatGPT", "claude_parametric": "Claude"}[engine_name]
+        try:
+            client = self._clients[engine_name]
+            result = client.query(qtxt)
+
+            # Use a dedicated DB connection per thread
+            db = DatabaseManager()
+            resp_id = db.store_response(
+                run_id=run_id, query_id=qid, llm_engine=engine_name,
+                model_name=result["model"], raw_response=result["raw_response"],
+                metadata=result["usage"],
+            )
+
+            parsed = self.parser.parse_response(result["raw_response"])
+            for mention in parsed.get("mentions", []):
+                db.store_mention(
+                    response_id=resp_id, run_id=run_id, query_id=qid,
+                    brand=mention["brand"], mention_position=mention["position"],
+                    mention_context=mention["context"], sentiment=mention["sentiment"],
+                    sentiment_score=mention["sentiment_score"],
+                    is_primary=mention["is_primary_recommendation"],
+                    llm_engine=engine_name,
+                )
+            for citation in result.get("citations", []):
+                if citation.get("url"):
+                    db.store_citation(
+                        response_id=resp_id, run_id=run_id, query_id=qid,
+                        url=citation["url"], title=citation.get("title", ""),
+                        llm_engine=engine_name,
+                    )
+
+            return {"status": "ok", "engine": label, "query_id": qid}
+
+        except Exception as e:
+            logger.error(f"{label} error for query {qid}: {e}")
+            try:
+                db = DatabaseManager()
+                db.log_error(run_id, qid, engine_name, str(e))
+            except Exception:
+                pass
+            return {"status": "error", "engine": label, "query_id": qid, "error": str(e)}
+
+    def run(self, progress_callback=None, run_id=None, max_workers=9) -> int:
+        """Run the benchmark with parallel execution.
+
+        max_workers=9 means up to 3 queries x 3 engines running concurrently.
+        If run_id is provided, resume that run (skipping completed pairs).
+        """
         self.db.seed_queries(QUERY_LIBRARY)
         active_queries = self.db.get_active_queries()
 
@@ -49,67 +98,51 @@ class BenchmarkEngine:
             )
 
         completed = self._get_completed_pairs(run_id)
+
+        # Build work items: all (query, engine) pairs not yet completed
+        work_items = []
+        for query in active_queries:
+            for engine_name in ENGINES:
+                if (query["id"], engine_name) not in completed:
+                    work_items.append((query["id"], query["query_text"], engine_name))
+
         total_steps = len(active_queries) * len(ENGINES)
-        current_step = len(completed)
+        done_count = len(completed)
 
-        try:
-            for query in active_queries:
-                qid = query["id"]
-                qtxt = query["query_text"]
-
-                for engine_name in ENGINES:
-                    if (qid, engine_name) in completed:
-                        continue  # Already done, skip
-
-                    label = {"grok_web_search": "Grok", "chatgpt_web_search": "ChatGPT", "claude_parametric": "Claude"}[engine_name]
-                    if progress_callback:
-                        progress_callback(current_step, total_steps, f"{label}: {qtxt[:55]}...")
-
-                    try:
-                        client = self._clients[engine_name]
-                        result = client.query(qtxt)
-                        resp_id = self.db.store_response(
-                            run_id=run_id, query_id=qid, llm_engine=engine_name,
-                            model_name=result["model"], raw_response=result["raw_response"],
-                            metadata=result["usage"],
-                        )
-                        self._parse_and_store(resp_id, run_id, qid, result, engine_name)
-                    except Exception as e:
-                        logger.error(f"{label} error for query {qid}: {e}")
-                        self.db.log_error(run_id, qid, engine_name, str(e))
-
-                    current_step += 1
-
-                self.db.update_run_progress(run_id, completed_queries=current_step // len(ENGINES))
-
-            # Compute aggregated metrics
+        if not work_items:
+            # Everything already done, just compute metrics
             self.metrics.compute_daily_metrics(run_id)
             self.db.complete_run(run_id)
+            return run_id
 
-        except Exception as e:
-            # Don't fail the run — leave it as "running" so it can be resumed
-            logger.error(f"Benchmark interrupted: {e}")
-            raise
+        if progress_callback:
+            progress_callback(done_count, total_steps, f"Starting {len(work_items)} tasks ({max_workers} parallel)...")
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(self._run_single, run_id, qid, qtxt, eng): (qid, eng)
+                for qid, qtxt, eng in work_items
+            }
+
+            for future in as_completed(futures):
+                done_count += 1
+                result = future.result()
+                label = result.get("engine", "?")
+                qid = result.get("query_id", "?")
+                status = result.get("status", "?")
+
+                if progress_callback:
+                    progress_callback(
+                        done_count, total_steps,
+                        f"[{done_count}/{total_steps}] {label} q{qid}: {status}"
+                    )
+
+                # Update progress every few completions
+                if done_count % 3 == 0:
+                    self.db.update_run_progress(run_id, completed_queries=done_count // len(ENGINES))
+
+        self.db.update_run_progress(run_id, completed_queries=len(active_queries))
+        self.metrics.compute_daily_metrics(run_id)
+        self.db.complete_run(run_id)
 
         return run_id
-
-    def _parse_and_store(self, response_id, run_id, query_id, result, engine):
-        parsed = self.parser.parse_response(result["raw_response"])
-
-        for mention in parsed.get("mentions", []):
-            self.db.store_mention(
-                response_id=response_id, run_id=run_id, query_id=query_id,
-                brand=mention["brand"], mention_position=mention["position"],
-                mention_context=mention["context"], sentiment=mention["sentiment"],
-                sentiment_score=mention["sentiment_score"],
-                is_primary=mention["is_primary_recommendation"],
-                llm_engine=engine,
-            )
-
-        for citation in result.get("citations", []):
-            if citation.get("url"):
-                self.db.store_citation(
-                    response_id=response_id, run_id=run_id, query_id=query_id,
-                    url=citation["url"], title=citation.get("title", ""),
-                    llm_engine=engine,
-                )
