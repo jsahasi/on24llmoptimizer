@@ -1,5 +1,7 @@
 import datetime
 import logging
+import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from db.database import DatabaseManager
 from benchmark.grok_client import GrokWebSearchClient
@@ -12,6 +14,28 @@ from config.queries import QUERY_LIBRARY
 logger = logging.getLogger(__name__)
 
 ENGINES = ["grok_web_search", "chatgpt_web_search", "claude_parametric"]
+
+# Per-engine rate limiting (seconds between requests per engine)
+ENGINE_DELAYS = {
+    "grok_web_search": 2.5,
+    "chatgpt_web_search": 1.5,
+    "claude_parametric": 1.5,
+}
+
+
+class _RateLimiter:
+    """Thread-safe per-engine rate limiter."""
+    def __init__(self):
+        self._locks = {eng: threading.Lock() for eng in ENGINES}
+        self._last_call = {eng: 0.0 for eng in ENGINES}
+
+    def wait(self, engine_name):
+        with self._locks[engine_name]:
+            delay = ENGINE_DELAYS.get(engine_name, 1.5)
+            elapsed = time.time() - self._last_call[engine_name]
+            if elapsed < delay:
+                time.sleep(delay - elapsed)
+            self._last_call[engine_name] = time.time()
 
 
 class BenchmarkEngine:
@@ -28,6 +52,7 @@ class BenchmarkEngine:
             "chatgpt_web_search": self.openai,
             "claude_parametric": self.claude,
         }
+        self._rate_limiter = _RateLimiter()
 
     def _get_completed_pairs(self, run_id):
         """Return set of (query_id, engine) pairs already completed for this run."""
@@ -41,6 +66,7 @@ class BenchmarkEngine:
         """Execute a single (query, engine) pair. Thread-safe."""
         label = {"grok_web_search": "Grok", "chatgpt_web_search": "ChatGPT", "claude_parametric": "Claude"}[engine_name]
         try:
+            self._rate_limiter.wait(engine_name)
             client = self._clients[engine_name]
             result = client.query(qtxt)
 
@@ -79,7 +105,7 @@ class BenchmarkEngine:
                 db.log_error(run_id, qid, engine_name, str(e))
             except Exception:
                 pass
-            return {"status": "error", "engine": label, "query_id": qid, "error": str(e)}
+            return {"status": f"error: {str(e)[:80]}", "engine": label, "query_id": qid, "error": str(e)}
 
     def run(self, progress_callback=None, run_id=None, max_workers=9) -> int:
         """Run the benchmark with parallel execution.
