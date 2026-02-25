@@ -101,6 +101,16 @@ scheduler\install_task.bat
 
 This creates a Windows Task Scheduler job that runs the benchmark weekly (Mondays at 6:00 AM).
 
+### Monthly Automated Benchmark (GitHub Actions)
+
+A GitHub Actions workflow runs automatically on the **first Monday of each month**:
+1. Runs the full 32-query benchmark across all 3 engines
+2. Generates a PDF report
+3. Emails it to jayesh.sahasi@on24.com
+4. Saves the PDF and database as downloadable artifacts (90-day retention)
+
+To trigger manually: Go to **Actions** tab on GitHub > **Monthly GEO Benchmark** > **Run workflow**.
+
 ## Authentication
 
 All pages are password-protected. Set `APP_PASSWORD` in `.env` or Streamlit Cloud secrets.

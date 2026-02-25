@@ -43,7 +43,8 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - Generate PDF report: `python reports/pdf_report.py`
 - Email report: `python -m reports.email_report <pdf_path> <to_email>`
 - Install deps: `pip install -r requirements.txt`
-- Task Scheduler (weekly): Run `scheduler\install_task.bat` as Administrator
+- Task Scheduler (weekly, local): Run `scheduler\install_task.bat` as Administrator
+- GitHub Actions: Runs monthly automatically (first Monday), or trigger manually from Actions tab
 
 ## Deployment
 - **Streamlit Cloud**: https://on24llmoptimizer.streamlit.app (public, password-protected)
@@ -71,3 +72,4 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - [x] Streamlit Cloud Deployment
 - [x] Parallel Execution (9 workers, ~5-8 min)
 - [x] Resumable Runs (interrupted benchmarks continue from last checkpoint)
+- [x] GitHub Actions Monthly Schedule (first Monday, emails PDF report)
