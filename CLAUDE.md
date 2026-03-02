@@ -1,7 +1,7 @@
 # ON24 GEO Benchmarking Application
 
 ## Project Overview
-Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoom (webinars/events only). Tracks daily, charts trends, provides tactical recommendations.
+Measures ON24's visibility in AI-powered search results (GEO — Generative Engine Optimization) compared to Goldcast and Zoom (webinars/events only). Queries 3 LLM engines with 32 B2B buyer questions, analyzes which brands are mentioned and how favorably, computes competitive metrics (SOV, win rate, position, sentiment, citations), and generates AI-powered recommendations to improve ON24's footprint. Think SEO, but for AI search engines.
 
 ## Tech Stack
 - Python 3.12 + Streamlit + SQLite (WAL mode) + Plotly
@@ -44,7 +44,7 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - Email report: `python -m reports.email_report <pdf_path> <to_email>`
 - Install deps: `pip install -r requirements.txt`
 - Task Scheduler (weekly, local): Run `scheduler\install_task.bat` as Administrator
-- GitHub Actions: Runs monthly automatically (first Monday), or trigger manually from Actions tab
+- GitHub Actions: Runs monthly (1st of each month), or trigger manually from Actions tab
 
 ## Deployment
 - **Streamlit Cloud**: https://on24llmoptimizer.streamlit.app (public, password-protected)
@@ -72,4 +72,4 @@ Benchmarks ON24's footprint in LLM search results (GEO) against Goldcast and Zoo
 - [x] Streamlit Cloud Deployment
 - [x] Parallel Execution (9 workers, ~5-8 min)
 - [x] Resumable Runs (interrupted benchmarks continue from last checkpoint)
-- [x] GitHub Actions Monthly Schedule (first Monday, emails PDF report)
+- [x] GitHub Actions Monthly Schedule (1st of each month, emails PDF report)

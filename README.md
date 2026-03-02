@@ -103,7 +103,7 @@ This creates a Windows Task Scheduler job that runs the benchmark weekly (Monday
 
 ### Monthly Automated Benchmark (GitHub Actions)
 
-A GitHub Actions workflow runs automatically on the **first Monday of each month**:
+A GitHub Actions workflow runs automatically on the **1st of each month** at 6:00 AM UTC:
 1. Runs the full 32-query benchmark across all 3 engines
 2. Generates a PDF report
 3. Emails it to jayesh.sahasi@on24.com
